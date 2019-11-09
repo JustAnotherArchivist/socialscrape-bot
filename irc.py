@@ -129,6 +129,16 @@ class IRC(threading.Thread):
         jobid = sha_1.hexdigest()
         return jobid
 
+    def _snscrape(self, command, channel, user, jobid):
+        settings.logger.log("SNSCRAPE - " + jobid + " - Running: " + command)
+        try:
+            subprocess.run(command, shell=True, check=True)
+        except subprocess.CalledProcessError as error:
+            settings.logger.log("SNSCRAPE - snscrape for {jobid} failed with exit status {returncode}".format(jobid=jobid, returncode=error.returncode))
+            self.send('PRIVMSG', '{user}: Sorry, snscrape failed for {jobid}: exit status {returncode}'.format(user=user, jobid=jobid, returncode=error.returncode), channel)
+            return False
+        return True
+
     def run_snscrape(self, channel, user, module, target, **kwargs):
         jobid = self.getjobid(user + '-' + module + '-' + target)
         settings.logger.log('SNSCRAPE - Job ID ' + jobid)
@@ -148,8 +158,9 @@ class IRC(threading.Thread):
                     settings.logger.log("SNSCRAPE - Twitter user " + quote(sanityregex.sub(r'',target)) + " not found")
                     self.send('PRIVMSG', '{user}: Sorry, No results found for {jobid} - User does not exist' .format(user=user, jobid=jobid), channel)
                 else:
-                    settings.logger.log("SNSCRAPE - Running with updated settings - snscrape --format '{url} {tcooutlinksss} {outlinksss}'  " + quote(module) + " " + newtarget + " >jobs/twitter-@" + jobid)
-                    subprocess.run("snscrape --format '{url} {tcooutlinksss} {outlinksss}'  " + quote(module) + " " + newtarget + " >jobs/twitter-@" + jobid, shell=True)
+                    success = self._snscrape("snscrape --format '{url} {tcooutlinksss} {outlinksss}'  " + quote(module) + " " + newtarget + " >jobs/twitter-@" + jobid, channel, user, jobid)
+                    if not success:
+                        return
                     settings.logger.log('SNSCRAPE - Finished ' + jobid + ' - Uploading to https://transfer.notkiska.pw/' + module + "-" + sanityregex.sub(r'',target))
                     #Insert the profile as per JAA's request :-)
                     profileline = "https://twitter.com/" + newtarget
@@ -163,7 +174,9 @@ class IRC(threading.Thread):
                     chromeboturls = [profileline]
 
             elif str(module).startswith("twitter-hash"):
-                subprocess.run("snscrape --format '{url} {tcooutlinksss} {outlinksss}'  " + quote(module) + " " + quote(sanityregex.sub(r'',target)) + " >jobs/twitter-#" + jobid, shell=True)
+                success = self._snscrape("snscrape --format '{url} {tcooutlinksss} {outlinksss}'  " + quote(module) + " " + quote(sanityregex.sub(r'',target)) + " >jobs/twitter-#" + jobid, channel, user, jobid)
+                if not success:
+                    return
                 settings.logger.log('SNSCRAPE - Finished ' + jobid + ' - Uploading to https://transfer.notkiska.pw/' + module + '-' + sanityregex.sub(r'',target))
                 settings.logger.log("CURL - Uploading with curl -s --upload-file jobs/twitter-#" + jobid + " https://transfer.notkiska.pw/twitter-#" + sanityregex.sub(r'',target))
                 lines = []
@@ -183,12 +196,16 @@ class IRC(threading.Thread):
             elif str(module).startswith("twitter-search"):
                 maxpages = kwargs.get('maxpages', None)
                 if not maxpages is None:
-                    subprocess.run("snscrape twitter-search --max-position " + maxpages + " " + quote(sanityregex.sub(r'',target)) + " >jobs/twitter-search-" + jobid, shell=True)
+                    success = self._snscrape("snscrape twitter-search --max-position " + maxpages + " " + quote(sanityregex.sub(r'',target)) + " >jobs/twitter-search-" + jobid, channel, user, jobid)
+                    if not success:
+                        return
                     settings.logger.log('SNSCRAPE - Finished ' + jobid + ' - Uploading to https://transfer.notkiska.pw/' + module  + " " + sanityregex.sub(r'',target) + " maxpages set")
                     uploadedurl = subprocess.check_output("curl -s --upload-file jobs/twitter-search-" + jobid + " https://transfer.notkiska.pw/twitter-search-" + quote(sanityregex.sub(r'',target)), shell=True).decode("utf-8")
                     newtarget = sanityregex.sub(r'',target)
                 if maxpages is None:
-                    subprocess.run("snscrape twitter-search " + quote(sanityregex.sub(r'',target)) + " >jobs/twitter-search-" + jobid, shell=True)
+                    success = self._snscrape("snscrape twitter-search " + quote(sanityregex.sub(r'',target)) + " >jobs/twitter-search-" + jobid, channel, user, jobid)
+                    if not success:
+                        return
                     settings.logger.log('SNSCRAPE - Finished ' + jobid + ' - Uploading to https://transfer.notkiska.pw/' + module + "-" + sanityregex.sub(r'',target))
                     uploadedurl = subprocess.check_output("curl -s --upload-file jobs/twitter-search-" + jobid + " https://transfer.notkiska.pw/twitter-search-" + quote(sanityregex.sub(r'',target)), shell=True).decode("utf-8")
                     newtarget = sanityregex.sub(r'',target)
@@ -223,7 +240,9 @@ class IRC(threading.Thread):
                     self.send('PRIVMSG', '{user}: Sorry, No results found for {jobid} - User does not exist / profile is set to private' .format(user=user, jobid=jobid), channel)
                 else:
                     settings.logger.log("SNSCRAPE - Running with updated settings - snscrape " + quote(module) + " " + newtarget + " >jobs/facebook-@" + jobid)
-                    subprocess.run("snscrape --format '{cleanUrl} {outlinksss}' " + quote(module) + " " + newtarget + " >jobs/facebook-@" + jobid, shell=True)
+                    success = self._snscrape("snscrape --format '{cleanUrl} {outlinksss}' " + quote(module) + " " + newtarget + " >jobs/facebook-@" + jobid, channel, user, jobid)
+                    if not success:
+                        return
                     settings.logger.log('SNSCRAPE - Finished ' + jobid + ' - Uploading to https://transfer.notkiska.pw/' + module + "-" + sanityregex.sub(r'',target))
                     profileline = "https://www.facebook.com/" + newtarget + "/"
                     lines = [profileline + "\n"]
@@ -254,7 +273,9 @@ class IRC(threading.Thread):
             open('Instagram_run', 'w').close()
             if str(module).startswith("instagram-user"):
                 settings.logger.log("snscrape --format '{dirtyUrl}'  " + module + " " + sanityregex.sub(r'',target) + " >jobs/instagram-@" + jobid)
-                subprocess.run("snscrape --format '{dirtyUrl}'  " + quote(module) + " " + quote(sanityregex.sub(r'',target)) + " >jobs/instagram-@" + jobid, shell=True)
+                success = self._snscrape("snscrape --format '{dirtyUrl}'  " + quote(module) + " " + quote(sanityregex.sub(r'',target)) + " >jobs/instagram-@" + jobid, channel, user, jobid)
+                if not success:
+                    return
                 if not os.stat("jobs/instagram-@" + jobid).st_size == 0:
                     settings.logger.log('SNSCRAPE - Finished ' + jobid + ' - Uploading to https://transfer.notkiska.pw/' + module + "-@" + sanityregex.sub(r'',target))
                     #Insert the profile as per JAA's request :-)
@@ -275,7 +296,9 @@ class IRC(threading.Thread):
                     os.remove('Instagram_run')
 
             elif str(module).startswith("instagram-hashtag"):
-                subprocess.run("snscrape --format '{dirtyUrl}'  " + quote(module) + " " + quote(sanityregex.sub(r'',target)) + " >jobs/instagram-#" + jobid, shell=True)
+                success = self._snscrape("snscrape --format '{dirtyUrl}'  " + quote(module) + " " + quote(sanityregex.sub(r'',target)) + " >jobs/instagram-#" + jobid, channel, user, jobid)
+                if not success:
+                    return
                 if not os.stat("jobs/instagram-#" + jobid).st_size == 0:
                     settings.logger.log('SNSCRAPE - Finished ' + jobid + ' - Uploading to https://transfer.notkiska.pw/' + module + "-" + sanityregex.sub(r'',target))
                     uploadedurl = subprocess.check_output("curl -s --upload-file jobs/instagram-#" + jobid + " https://transfer.notkiska.pw/instagram-%23" + quote(sanityregex.sub(r'',target)), shell=True).decode("utf-8")
@@ -306,7 +329,9 @@ class IRC(threading.Thread):
             if str(module).startswith("vkontakte-user"):
                     newtarget = target
                     settings.logger.log("SNSCRAPE - Running with updated settings - snscrape " + quote(module) + " " + newtarget.strip() + " >jobs/vkontakte-" + jobid)
-                    subprocess.run("snscrape " + quote(module) + " " + newtarget.strip() + " >jobs/vkontakte-" + jobid, shell=True)
+                    success = self._snscrape("snscrape " + quote(module) + " " + newtarget.strip() + " >jobs/vkontakte-" + jobid, channel, user, jobid)
+                    if not success:
+                        return
                     settings.logger.log('SNSCRAPE - Finished ' + jobid + ' - Uploading to https://transfer.notkiska.pw/' + module + "-" + sanityregex.sub(r'',target))
                     profileline = "https://vk.com/" + newtarget.strip() + "/"
                     lines = [profileline + "\n"]
