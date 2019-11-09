@@ -81,6 +81,7 @@ class IRC(threading.Thread):
             # self.server.send('{message}\n'.format(**locals()))
 
     def listener(self):
+        command_message_prefix_pattern = r'^:.+PRIVMSG[^:]+:' + re.escape(self.nick)
         while True:
             message = self.server.recv(4096).decode('utf-8')
             self.messages_received.append(message)
@@ -90,9 +91,9 @@ class IRC(threading.Thread):
                 settings.logger.log('Received message ' + message)
                 message_new = re.search(r'^[^:]+:(.*)$', message).group(1)
                 self.send('PONG', ':{message_new}'.format(**locals()))
-            elif re.search(r'^:.+PRIVMSG[^:]+:socialbot', message):
-                    if re.search(r'^:.+PRIVMSG[^:]+:socialbot .*', message):
-                        command = re.search(r'^:.+PRIVMSG[^:]+:socialbot (.*)', message) \
+            elif re.search(command_message_prefix_pattern, message):
+                    if re.search(command_message_prefix_pattern + ' .*', message):
+                        command = re.search(command_message_prefix_pattern + ' (.*)', message) \
                              .group(1).strip().split(' ')
                         command = [s.strip() for s in command if len(s.strip()) != 0]
                         user = re.search(r'^:([^!]+)!', message).group(1)
@@ -102,8 +103,8 @@ class IRC(threading.Thread):
                                                'channel': channel})
                         self.command(command, user, channel)
                         settings.logger.log('COMMAND - Received in channel {channel} - {command[0]}'.format(**locals()))
-                    elif re.search(r'^:.+PRIVMSG[^:]+:socialbot\: .*', message):
-                        command = re.search(r'^:.+PRIVMSG[^:]+:socialbot\: (.*)', message) \
+                    elif re.search(command_message_prefix_pattern + r'\: .*', message):
+                        command = re.search(command_message_prefix_pattern + r'\: (.*)', message) \
                              .group(1).strip().split(' ')
                         command = [s.strip() for s in command if len(s.strip()) != 0]
                         user = re.search(r'^:([^!]+)!', message).group(1)
