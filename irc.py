@@ -44,7 +44,7 @@ class IRC(threading.Thread):
         self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.server.connect((self.server_name, self.server_port))
         self.send('USER', '{nick} {nick} {nick} :I am a bot; '
-                           'https://github.com/Ghostofapacket/socialbot/.'
+                           'https://github.com/Ghostofapacket/socialscrape-bot'
                    .format(nick=self.nick))
         self.send('NICK', '{nick}'.format(nick=self.nick))
         self.send('JOIN', '{channel_bot}'.format(
@@ -329,7 +329,7 @@ class IRC(threading.Thread):
     def command(self, command, user, channel):
         if command[0] == 'help':
             self.send('PRIVMSG', '{user}: For IRC commands can be found at -  '
-                                 'https://github.com/ghostofapacket/socialbot/blob/commands.md'
+                                 'https://github.com/ghostofapacket/socialscrape-bot/blob/commands.md'
                       .format(**locals()), channel)
         elif command[0] == 'stop' and self.check_admin(user) == True:
             settings.logger.log('EMERGENCY: {user} has requested I stop'.format(**locals()))
