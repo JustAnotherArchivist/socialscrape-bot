@@ -319,7 +319,7 @@ class IRC(threading.Thread):
                     if not success:
                         return
                     settings.logger.log('SNSCRAPE - Finished ' + jobid + ' - Uploading to https://transfer.notkiska.pw/' + module + "-" + sanityregex.sub(r'',target))
-                    profileline = "https://vk.com/" + newtarget.strip() + "/"
+                    profileline = "https://vk.com/" + newtarget.strip()
                     lines = [profileline + "\n"]
                     with open("jobs/vkontakte-" + jobid, "r") as outfile:
                         for line in outfile.read().split():
@@ -335,7 +335,7 @@ class IRC(threading.Thread):
                 else:
                     self.send('PRIVMSG', '!ao < {uploadedurl} --explain "For {user} - socialscrape job {jobid}" ' \
                           .format(user=user, uploadedurl=uploadedurl, jobid=jobid), channel)
-                    self.send('PRIVMSG', 'chromebot: a https://vk.com/{target}/'.format(target=newtarget), channel)
+                    self.send('PRIVMSG', 'chromebot: a https://vk.com/{target}'.format(target=newtarget), channel)
 
     def command(self, command, user, channel):
         if command[0] == 'help':
