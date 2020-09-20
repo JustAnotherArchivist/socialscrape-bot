@@ -128,6 +128,7 @@ class IRC(threading.Thread):
 
 
     def check_admin(self, user):
+        return False
         # change to db
         if str(user) == "Igloo":
             return True
