@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import socket
+import ssl
 import datetime
 import threading
 import re
@@ -20,6 +21,7 @@ class IRC(threading.Thread):
         self.nick = settings.irc_nick
         self.server_name = settings.irc_server_name
         self.server_port = settings.irc_server_port
+        self.server_ssl = settings.irc_server_ssl
         self.server = None
         self.scrapesite = None
         self.incoming_buffer = b''
@@ -40,6 +42,9 @@ class IRC(threading.Thread):
         settings.logger.log('Connecting to IRC server ' + self.server_name)
         self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.server.connect((self.server_name, self.server_port))
+        if self.server_ssl:
+            self.rawserver = self.server
+            self.server = ssl.create_default_context().wrap_socket(self.rawserver, server_hostname = self.server_name)
         self.send('USER', '{nick} {nick} {nick} :I am a bot; '
                            'https://github.com/Ghostofapacket/socialscrape-bot'
                    .format(nick=self.nick))
