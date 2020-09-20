@@ -51,6 +51,7 @@ class IRC(threading.Thread):
              channel_bot=self.channel_bot))
 #        self.send('PRIVMSG', 'Version {version}.'
 #                  .format(version=settings.version), self.channel_bot)
+        self.send('PRIVMSG', 'Fuck EFnet.', self.channel_bot)
         self.listener()
 
         self.start_pinger()
@@ -293,6 +294,7 @@ class IRC(threading.Thread):
                 else:
                     self.send('PRIVMSG', '{user}: Sorry, No results returned for {jobid} - User does not exist'.format(user=user,jobid=jobid),channel)
                     jobfile = "jobs/instagram-@" + jobid
+                    time.sleep(300)
                     os.remove('Instagram_run')
 
             elif str(module).startswith("instagram-hashtag"):
@@ -308,6 +310,7 @@ class IRC(threading.Thread):
                 else:
                     self.send('PRIVMSG', '{user}: Sorry, No results returned for {jobid} - Hashtag does not exist'.format(user=user,jobid=jobid),channel)
                     jobfile = "jobs/instagram-#" + jobid
+                    time.sleep(300)
                     os.remove('Instagram_run')
             else:
                     settings.logger.log('SNSCRAPE - Command not found')
@@ -321,8 +324,9 @@ class IRC(threading.Thread):
                     self.send('PRIVMSG', '{user}: Sorry, No results returned for {jobid}'.format(user=user,jobid=jobid),channel)
                 else:
                     uploadedurl = uploadedurl.replace('%40','@')
-                    self.send('PRIVMSG', '!a < {uploadedurl} --explain "For {user} - socialscrape job {jobid}" --igset instagram' \
+                    self.send('PRIVMSG', '!a < {uploadedurl} --explain "For {user} - socialscrape job {jobid}" --igset instagram --pipeline Igloo-EU-OSS-instagram --concurrency 1 --useragent firefox' \
                           .format(user=user, uploadedurl=uploadedurl, jobid=jobid), channel)
+                time.sleep(300)
                 os.remove('Instagram_run')
 
         if str(module).startswith("vkontakte"):
@@ -398,6 +402,8 @@ class IRC(threading.Thread):
                         runsnscrape.start()
 
                 if function.startswith('instagram-'):
+                    self.send('PRIVMSG', user + ': Sorry, Instagram scraping is currently disabled.', channel)
+                    return
                     # sendnudez
                     module = command[1]
                     target = command[2]
