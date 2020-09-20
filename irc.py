@@ -22,8 +22,9 @@ class IRC(threading.Thread):
         self.server_port = settings.irc_server_port
         self.server = None
         self.scrapesite = None
-        self.messages_received = []
-        self.messages_sent = []
+        self.incoming_buffer = b''
+#        self.messages_received = []
+#        self.messages_sent = []
         self.commands_received = []
         self.commands_sent = []
 #        self.running_instagram = []
@@ -69,7 +70,6 @@ class IRC(threading.Thread):
         message = '{command} {channel}{string}'.format(**locals())
         try:
             settings.logger.log('IRC - {message}'.format(**locals()))
-            self.messages_sent.append(message)
             self.server.send('{message}\n'.format(**locals()).encode('utf-8'))
         except Exception as exception:
             settings.logger.log('{exception}'.format(**locals()), 'WARNING')
@@ -79,37 +79,47 @@ class IRC(threading.Thread):
     def listener(self):
         command_message_prefix_pattern = r'^:.+PRIVMSG[^:]+:' + re.escape(self.nick)
         while True:
-            message = self.server.recv(4096).decode('utf-8')
-            self.messages_received.append(message)
-            for line in message.splitlines():
-                settings.logger.log('IRC - {line}'.format(**locals()))
-            if message.startswith('PING :'):
-                settings.logger.log('Received message ' + message)
-                message_new = re.search(r'^[^:]+:(.*)$', message).group(1)
-                self.send('PONG', ':{message_new}'.format(**locals()))
-            elif re.search(command_message_prefix_pattern, message):
-                    if re.search(command_message_prefix_pattern + ' .*', message):
-                        command = re.search(command_message_prefix_pattern + ' (.*)', message) \
-                             .group(1).strip().split(' ')
-                        command = [s.strip() for s in command if len(s.strip()) != 0]
-                        user = re.search(r'^:([^!]+)!', message).group(1)
-                        channel = re.search(r'^:[^#]+(#[^ :]+) ?:', message).group(1)
-                        self.commands_received.append({'command': command,
-                                               'user': user,
-                                               'channel': channel})
-                        self.command(command, user, channel)
-                        settings.logger.log('COMMAND - Received in channel {channel} - {command[0]}'.format(**locals()))
-                    elif re.search(command_message_prefix_pattern + r'\: .*', message):
-                        command = re.search(command_message_prefix_pattern + r'\: (.*)', message) \
-                             .group(1).strip().split(' ')
-                        command = [s.strip() for s in command if len(s.strip()) != 0]
-                        user = re.search(r'^:([^!]+)!', message).group(1)
-                        channel = re.search(r'^:[^#]+(#[^ :]+) ?:', message).group(1)
-                        self.commands_received.append({'command': command,
-                                               'user': user,
-                                               'channel': channel})
-                        self.command(command, user, channel)
-                        settings.logger.log('COMMAND - Received in channel {channel} - {command[0]}'.format(**locals()))
+            data = self.server.recv(4096)
+            self.incoming_buffer += data
+            for rawmessage in self.incoming_buffer.split(b'\r\n')[:-1]:
+                try:
+                    rawmessage = rawmessage.decode('utf-8')
+                except UnicodeDecodeError as e:
+                    settings.logger.log('IRC - Skipping undecodable rawmessage {!r}: {!s}'.format(rawmessage, e))
+                    continue
+                settings.logger.log('IRC - {rawmessage}'.format(**locals()))
+                if rawmessage.startswith(':'):
+                    prefix, message = rawmessage.split(' ', 1)
+                else:
+                    message = rawmessage
+                if message.startswith('PING :'):
+                    settings.logger.log('Received message ' + message)
+                    message_new = re.search(r'^[^:]+:(.*)$', message).group(1)
+                    self.send('PONG', ':{message_new}'.format(**locals()))
+                elif re.search(command_message_prefix_pattern, rawmessage):
+                        if re.search(command_message_prefix_pattern + ' .*', rawmessage):
+                            command = re.search(command_message_prefix_pattern + ' (.*)', rawmessage) \
+                                 .group(1).strip().split(' ')
+                            command = [s.strip() for s in command if len(s.strip()) != 0]
+                            user = re.search(r'^:([^!]+)!', rawmessage).group(1)
+                            channel = re.search(r'^:[^#]+(#[^ :]+) ?:', rawmessage).group(1)
+                            self.commands_received.append({'command': command,
+                                                   'user': user,
+                                                   'channel': channel})
+                            self.command(command, user, channel)
+                            settings.logger.log('COMMAND - Received in channel {channel} - {command[0]}'.format(**locals()))
+                        elif re.search(command_message_prefix_pattern + r'\: .*', rawmessage):
+                            command = re.search(command_message_prefix_pattern + r'\: (.*)', rawmessage) \
+                                 .group(1).strip().split(' ')
+                            command = [s.strip() for s in command if len(s.strip()) != 0]
+                            user = re.search(r'^:([^!]+)!', rawmessage).group(1)
+                            channel = re.search(r'^:[^#]+(#[^ :]+) ?:', rawmessage).group(1)
+                            self.commands_received.append({'command': command,
+                                                   'user': user,
+                                                   'channel': channel})
+                            self.command(command, user, channel)
+                            settings.logger.log('COMMAND - Received in channel {channel} - {command[0]}'.format(**locals()))
+            self.incoming_buffer = self.incoming_buffer.rsplit(b'\r\n', 1)[1]
 
 
     def check_admin(self, user):
