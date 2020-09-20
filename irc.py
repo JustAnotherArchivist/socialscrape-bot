@@ -406,6 +406,8 @@ class IRC(threading.Thread):
                         runsnscrape.start()
 
                 if function.startswith('instagram-'):
+                    self.send('PRIVMSG', user + ': Sorry, Instagram scraping is currently disabled.', channel)
+                    return
                     # sendnudez
                     module = command[1]
                     target = command[2]
