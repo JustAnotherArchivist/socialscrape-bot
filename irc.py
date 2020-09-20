@@ -101,6 +101,8 @@ class IRC(threading.Thread):
                     self.send('PONG', ':{message_new}'.format(**locals()))
                 elif message.startswith('001 '): # Connection registered
                     self.send('JOIN', self.channel_bot)
+                    if self.server_name in ('irc.servercentral.net', 'irc.colosolutions.net', 'irc.mzima.net'):
+                        self.send('PRIVMSG', 'Fuck EFnet.', self.channel_bot)
                 elif re.search(command_message_prefix_pattern, rawmessage):
                         if re.search(command_message_prefix_pattern + ' .*', rawmessage):
                             command = re.search(command_message_prefix_pattern + ' (.*)', rawmessage) \
