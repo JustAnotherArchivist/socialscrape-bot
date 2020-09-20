@@ -4,17 +4,13 @@ import datetime
 import threading
 import re
 import time
-import pytz
-import psutil
 import hashlib
 import subprocess
 import os
-import datetime
 from multiprocessing import Process, Queue, Pool
 from shlex import quote
 
 import settings
-import abcalc
 
 
 class IRC(threading.Thread):
@@ -288,7 +284,6 @@ class IRC(threading.Thread):
                     outfile.writelines(lines)
                     outfile.close()
                     uploadedurl = subprocess.check_output("curl -s --upload-file jobs/instagram-@" + jobid + " https://transfer.notkiska.pw/instagram-@" + quote(sanityregex.sub(r'',target)), shell=True).decode("utf-8")
-                    archivebotid = abcalc.jobid(uploadedurl)
                     jobfile = "jobs/instagram-@" + jobid
                 else:
                     self.send('PRIVMSG', '{user}: Sorry, No results returned for {jobid} - User does not exist'.format(user=user,jobid=jobid),channel)
@@ -302,7 +297,6 @@ class IRC(threading.Thread):
                 if not os.stat("jobs/instagram-#" + jobid).st_size == 0:
                     settings.logger.log('SNSCRAPE - Finished ' + jobid + ' - Uploading to https://transfer.notkiska.pw/' + module + "-" + sanityregex.sub(r'',target))
                     uploadedurl = subprocess.check_output("curl -s --upload-file jobs/instagram-#" + jobid + " https://transfer.notkiska.pw/instagram-%23" + quote(sanityregex.sub(r'',target)), shell=True).decode("utf-8")
-                    archivebotid = abcalc.jobid(uploadedurl)
                     uploadedurl = uploadedurl.replace('%40','@')
                     jobfile = "jobs/instagram-#" + jobid
                 else:
