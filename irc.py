@@ -206,9 +206,6 @@ class IRC(threading.Thread):
                     settings.logger.log('SNSCRAPE - Finished ' + jobid + ' - Uploading to https://transfer.notkiska.pw/' + module + "-" + sanityregex.sub(r'',target))
                     uploadedurl = subprocess.check_output("curl -s --upload-file jobs/twitter-search-" + jobid + " https://transfer.notkiska.pw/twitter-search-" + quote(sanityregex.sub(r'',target)), shell=True).decode("utf-8")
                     newtarget = sanityregex.sub(r'',target)
-            else:
-                    settings.logger.log('SNSCRAPE - Command not found')
-                    bot.send('PRIVMSG', 'Sorry {user} command not found'.format(user=user), channel)
 
             if not newtarget is None:
                 if uploadedurl.startswith("400"):
@@ -259,9 +256,6 @@ class IRC(threading.Thread):
                     self.send('PRIVMSG', '!ao < {uploadedurl} --useragent firefox --explain "For {user} - socialscrape job {jobid}" ' \
                           .format(user=user, uploadedurl=uploadedurl, jobid=jobid), channel)
                     self.send('PRIVMSG', 'chromebot: a https://www.facebook.com/{target}/'.format(target=newtarget), channel)
-            else:
-                    settings.logger.log('SNSCRAPE - Command not found')
-                    bot.send('PRIVMSG', 'Sorry {user} command not found'.format(user=user), channel)
 
         if str(module).startswith("instagram"):
             while os.path.isfile('Instagram_run'):
@@ -304,9 +298,6 @@ class IRC(threading.Thread):
                     self.send('PRIVMSG', '{user}: Sorry, No results returned for {jobid} - Hashtag does not exist'.format(user=user,jobid=jobid),channel)
                     jobfile = "jobs/instagram-#" + jobid
                     os.remove('Instagram_run')
-            else:
-                    settings.logger.log('SNSCRAPE - Command not found')
-                    bot.send('PRIVMSG', 'Sorry {user} command not found'.format(user=user), channel)
 
             if not os.stat(jobfile).st_size == 0:
                 #Should be standard for all jobs
@@ -375,6 +366,10 @@ class IRC(threading.Thread):
             # Get the site to scrape
             try:
                 function = command[1]
+                if function not in ('twitter-user', 'twitter-hash', 'twitter-search', 'facebook-user', 'instagram-user', 'instagram-hashtag', 'vkontakte-user'):
+                    settings.logger.log('SNSCRAPE - Command not found')
+                    self.send('PRIVMSG', '{user}: Command not found'.format(user=user), channel)
+                    return
                 queue = Queue()
                 if function.startswith('twitter-'):
                     module = command[1]
