@@ -45,12 +45,10 @@ class IRC(threading.Thread):
         if self.server_ssl:
             self.rawserver = self.server
             self.server = ssl.create_default_context().wrap_socket(self.rawserver, server_hostname = self.server_name)
+        self.send('NICK', '{nick}'.format(nick=self.nick))
         self.send('USER', '{nick} {nick} {nick} :I am a bot; '
                            'https://github.com/Ghostofapacket/socialscrape-bot'
                    .format(nick=self.nick))
-        self.send('NICK', '{nick}'.format(nick=self.nick))
-        self.send('JOIN', '{channel_bot}'.format(
-             channel_bot=self.channel_bot))
 #        self.send('PRIVMSG', 'Version {version}.'
 #                  .format(version=settings.version), self.channel_bot)
         self.listener()
@@ -101,6 +99,8 @@ class IRC(threading.Thread):
                     settings.logger.log('Received message ' + message)
                     message_new = re.search(r'^[^:]+:(.*)$', message).group(1)
                     self.send('PONG', ':{message_new}'.format(**locals()))
+                elif message.startswith('001 '): # Connection registered
+                    self.send('JOIN', self.channel_bot)
                 elif re.search(command_message_prefix_pattern, rawmessage):
                         if re.search(command_message_prefix_pattern + ' .*', rawmessage):
                             command = re.search(command_message_prefix_pattern + ' (.*)', rawmessage) \
