@@ -188,7 +188,7 @@ class IRC(threading.Thread):
                     uploadedurl = subprocess.check_output("curl -s --upload-file jobs/twitter-@" + jobid + " https://transfer.notkiska.pw/twitter-@" + newtarget, shell=True).decode("utf-8")
                     chromeboturls = [profileline]
 
-            elif str(module).startswith("twitter-hash"):
+            elif str(module).startswith("twitter-hashtag"):
                 success = self._snscrape("snscrape --format '{url} {tcooutlinksss} {outlinksss}'  " + quote(module) + " " + quote(sanityregex.sub(r'',target)) + " >jobs/twitter-#" + jobid, channel, user, jobid)
                 if not success:
                     return
@@ -384,7 +384,7 @@ class IRC(threading.Thread):
             # Get the site to scrape
             try:
                 function = command[1]
-                if function not in ('twitter-user', 'twitter-hash', 'twitter-search', 'facebook-user', 'instagram-user', 'instagram-hashtag', 'vkontakte-user'):
+                if function not in ('twitter-user', 'twitter-hashtag', 'twitter-search', 'facebook-user', 'instagram-user', 'instagram-hashtag', 'vkontakte-user'):
                     settings.logger.log('SNSCRAPE - Command not found')
                     self.send('PRIVMSG', '{user}: Command not found'.format(user=user), channel)
                     return
