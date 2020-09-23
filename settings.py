@@ -1,5 +1,5 @@
 # variables to be changed
-version = 20200920.01
+version = 20200923.01
 irc_channel_bot = '#archivebot'
 irc_nick = 'socialbot'
 irc_server_name = 'irc.servercentral.net'
