@@ -49,8 +49,6 @@ class IRC(threading.Thread):
         self.send('USER', '{nick} {nick} {nick} :I am a bot; '
                            'https://github.com/Ghostofapacket/socialscrape-bot'
                    .format(nick=self.nick))
-#        self.send('PRIVMSG', 'Version {version}.'
-#                  .format(version=settings.version), self.channel_bot)
         self.listener()
 
         self.start_pinger()
@@ -372,8 +370,13 @@ class IRC(threading.Thread):
             self.server.close()
             settings.run_services.stop()
         elif command[0] == 'version':
-            self.send('PRIVMSG', '{user}: Version is {version}.'
-                      .format(user=user, version=settings.version), channel)
+            try:
+                snscrapeversion = subprocess.check_output(['snscrape', '--version'], encoding = 'utf-8').strip()
+            except subprocess.CalledProcessError:
+                self.send('PRIVMSG', '{user}: Error trying to get snscrape version.', channel)
+                return
+            self.send('PRIVMSG', '{user}: Version {version}, {snscrapeversion}.'
+                      .format(user=user, version=settings.version, snscrapeversion=snscrapeversion), channel)
         elif command[0] == 'snsupdate' and self.check_admin(user) == True:
             # Do the git pull and reload the module here
             settings.logger.log('WARNING: {user} has requested I update snscrape'.format(**locals()))

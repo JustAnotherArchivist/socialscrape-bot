@@ -1,5 +1,5 @@
 # variables to be changed
-version = 20200923.01
+#version = '' # Set at runtime by start.py
 irc_channel_bot = '#archivebot'
 irc_nick = 'socialbot'
 irc_server_name = 'irc.servercentral.net'
