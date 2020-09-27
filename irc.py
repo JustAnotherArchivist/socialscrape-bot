@@ -108,6 +108,9 @@ class IRC(threading.Thread):
                             command = [s.strip() for s in command if len(s.strip()) != 0]
                             user = re.search(r'^:([^!]+)!', rawmessage).group(1)
                             channel = re.search(r'^:[^#]+(#[^ :]+) ?:', rawmessage).group(1)
+                            if '/' in command:
+                                self.send('PRIVMSG', '{user}: Command must not contain slashes.'.format(user=user), channel)
+                                continue
                             self.commands_received.append({'command': command,
                                                    'user': user,
                                                    'channel': channel})
@@ -119,6 +122,9 @@ class IRC(threading.Thread):
                             command = [s.strip() for s in command if len(s.strip()) != 0]
                             user = re.search(r'^:([^!]+)!', rawmessage).group(1)
                             channel = re.search(r'^:[^#]+(#[^ :]+) ?:', rawmessage).group(1)
+                            if '/' in command:
+                                self.send('PRIVMSG', '{user}: Command must not contain slashes.'.format(user=user), channel)
+                                continue
                             self.commands_received.append({'command': command,
                                                    'user': user,
                                                    'channel': channel})
