@@ -25,6 +25,7 @@ class IRC(threading.Thread):
         self.server = None
         self.scrapesite = None
         self.incoming_buffer = b''
+        self.send_queue = Queue()
 #        self.messages_received = []
 #        self.messages_sent = []
         self.commands_received = []
@@ -45,6 +46,7 @@ class IRC(threading.Thread):
         if self.server_ssl:
             self.rawserver = self.server
             self.server = ssl.create_default_context().wrap_socket(self.rawserver, server_hostname = self.server_name)
+        self.start_sender()
         self.send('NICK', '{nick}'.format(nick=self.nick))
         self.send('USER', '{nick} {nick} {nick} :I am a bot; '
                            'https://github.com/Ghostofapacket/socialscrape-bot'
@@ -53,7 +55,6 @@ class IRC(threading.Thread):
 
         self.start_pinger()
         settings.logger.log('Connected to ' + self.server_name + ' as ' + self.nick)
-
 
     def start_pinger(self):
         self.pinger = threading.Thread(target=self.pinger)
@@ -65,17 +66,29 @@ class IRC(threading.Thread):
             time.sleep(600)
             self.send('PING', ':')
 
+    def start_sender(self):
+        self.sender = threading.Thread(target = self.sender)
+        self.sender.daemon = True
+        self.sender.start()
+
+    def sender(self):
+        while True:
+            line = self.send_queue.get()
+            self.real_send(line)
+
     def send(self, command, string, channel=''):
         if channel != '':
             channel += ' :'
         message = '{command} {channel}{string}'.format(**locals())
+        self.send_queue.put(message)
+
+    def real_send(self, message):
+        # Must only be called from a single thread
         try:
             settings.logger.log('IRC - {message}'.format(**locals()))
-            self.server.send('{message}\n'.format(**locals()).encode('utf-8'))
+            self.server.send('{message}\r\n'.format(**locals()).encode('utf-8'))
         except Exception as exception:
             settings.logger.log('{exception}'.format(**locals()), 'WARNING')
-            # self.connect()
-            # self.server.send('{message}\n'.format(**locals()))
 
     def listener(self):
         command_message_prefix_pattern = r'^:.+PRIVMSG[^:]+:' + re.escape(self.nick)
