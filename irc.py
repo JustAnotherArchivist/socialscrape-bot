@@ -49,7 +49,7 @@ class IRC(threading.Thread):
         self.start_sender()
         self.send('NICK', '{nick}'.format(nick=self.nick))
         self.send('USER', '{nick} {nick} {nick} :I am a bot; '
-                           'https://github.com/Ghostofapacket/socialscrape-bot'
+                           'https://github.com/JustAnotherArchivist/socialscrape-bot'
                    .format(nick=self.nick))
         self.listener()
 
@@ -369,7 +369,7 @@ class IRC(threading.Thread):
     def command(self, command, user, channel):
         if command[0] == 'help':
             self.send('PRIVMSG', '{user}: For IRC commands can be found at -  '
-                                 'https://github.com/ghostofapacket/socialscrape-bot/blob/commands.md'
+                                 'https://github.com/JustAnotherArchivist/socialscrape-bot/blob/master/commands.md'
                       .format(**locals()), channel)
         elif command[0] == 'stop' and self.check_admin(user) == True:
             settings.logger.log('EMERGENCY: {user} has requested I stop'.format(**locals()))
