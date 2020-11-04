@@ -458,3 +458,11 @@ class IRC(threading.Thread):
             except IndexError:
                 self.send('PRIVMSG', user + ': Missing site; try ' + self.nick + ' snscrape instagram-user,instagram-hashtag'\
                           + ',twitter-user,twitter-hashtag,twitter-search'.format(user=user), channel)
+        elif command[0] == 'instagram':
+            if len(command) != 2 or not re.match(r'^https?://(www\.)?(instagram\.com|instagr\.am)/\S*$', command[1]):
+                self.send('PRIVMSG', f'{user}: Invalid command; usage: "instagram [URL]"', channel)
+                return
+            if command[1].count('/') == 3: # Would recurse through all of Instagram.
+                self.send('PRIVMSG', f'{user}: Refusing URL with too few slashes', channel)
+                return
+            self.send('PRIVMSG', f'!a {command[1]} --igset instagram --concurrency 1 --delay 1000 --useragent firefox --pipeline instagram --explain "For {user}"', channel)
