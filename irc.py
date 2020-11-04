@@ -476,10 +476,22 @@ class IRC(threading.Thread):
             except IndexError:
                 self.send('PRIVMSG', user + ': Missing site; try ' + self.nick + ' snscrape instagram-user,instagram-hashtag'\
                           + ',twitter-user,twitter-hashtag,twitter-search'.format(user=user), channel)
-        elif command[0] == 'instagram':
+        elif command[0] in ('instagram', 'instagram-user'):
             if len(command) != 2 or not re.match(r'^https?://(www\.)?(instagram\.com|instagr\.am)/\S*$', command[1]):
                 self.send('PRIVMSG', f'{user}: Invalid command; usage: "instagram [URL]"', channel)
                 return
+            if command[0] == 'instagram-user':
+                # Fix capitalisation and add trailing slash if missing
+                newUrl = command[1].lower()
+                if newUrl.count('/') == 3:
+                    newUrl = f'{newUrl}/'
+                if not newUrl.startswith('https://'):
+                    newUrl = f'https://{newUrl.split("//", 1)[1]}'
+                if not newUrl.startswith('https://www.instagram.com/'):
+                    newUrl = f'https://www.instagram.com/{newUrl.split("/", 3)[3]}'
+                if newUrl != command[1]:
+                    self.send('PRIVMSG', f'{user}: Fixed your URL from {command[1]} to {newUrl}', channel)
+                    command[1] = newUrl
             if command[1].count('/') == 3: # Would recurse through all of Instagram.
                 self.send('PRIVMSG', f'{user}: Refusing URL with too few slashes', channel)
                 return
