@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import base64
 import socket
 import ssl
 import datetime
@@ -19,6 +20,7 @@ class IRC(threading.Thread):
         threading.Thread.__init__(self)
         self.channel_bot = settings.irc_channel_bot
         self.nick = settings.irc_nick
+        self.sasl = settings.irc_sasl
         self.server_name = settings.irc_server_name
         self.server_port = settings.irc_server_port
         self.server_ssl = settings.irc_server_ssl
@@ -47,6 +49,8 @@ class IRC(threading.Thread):
             self.rawserver = self.server
             self.server = ssl.create_default_context().wrap_socket(self.rawserver, server_hostname = self.server_name)
         self.start_sender()
+        if self.sasl:
+            self.send('CAP', 'REQ :sasl')
         self.send('NICK', '{nick}'.format(nick=self.nick))
         self.send('USER', '{nick} {nick} {nick} :I am a bot; '
                            'https://github.com/JustAnotherArchivist/socialscrape-bot'
@@ -110,6 +114,20 @@ class IRC(threading.Thread):
                     settings.logger.log('Received message ' + message)
                     message_new = re.search(r'^[^:]+:(.*)$', message).group(1)
                     self.send('PONG', ':{message_new}'.format(**locals()))
+                elif self.sasl and message.startswith('CAP '):
+                    if message != 'CAP * ACK :sasl':
+                        settings.logger.log('IRC - ERROR: SASL capability not ACKd, cannot continue')
+                        raise RuntimeError('SASL not acknowledged by server')
+                    self.send('AUTHENTICATE', 'PLAIN')
+                elif self.sasl and message == 'AUTHENTICATE +':
+                    username, password = self.sasl.split(':')
+                    sasl = base64.b64encode(f'{username}\0{username}\0{password}'.encode('utf-8')).decode('ascii')
+                    self.send('AUTHENTICATE', sasl)
+                elif self.sasl and message.startswith('903 '): # RPL_SASLSUCCESS
+                    self.send('CAP', 'END')
+                elif self.sasl and message[:4] in ('902 ', '904 ', '905 ', '906 ', '907 ', '908 '):
+                    settings.logger.log('IRC - ERROR: SASL authentication failed, cannot continue')
+                    raise RuntimeError('SASL authentication failed')
                 elif message.startswith('001 '): # Connection registered
                     self.send('JOIN', self.channel_bot)
                     if self.server_name in ('irc.servercentral.net', 'irc.colosolutions.net', 'irc.mzima.net'):
