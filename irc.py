@@ -261,7 +261,7 @@ class IRC(threading.Thread):
                     self.send('PRIVMSG', '{user}: Sorry, No results returned for {jobid}'.format(user=user,jobid=jobid),channel)
                 else:
                     uploadedurl = uploadedurl.replace('%40','@')
-                    self.send('PRIVMSG', '!ao < {uploadedurl} --explain "For {user} - socialscrape job {jobid}"' \
+                    self.send('PRIVMSG', '!ao < {uploadedurl} --igset badvideos --explain "For {user} - socialscrape job {jobid}"' \
                           .format(user=user, uploadedurl=uploadedurl, jobid=jobid), channel)
                     if chromeboturls:
                         for url in chromeboturls:
@@ -300,7 +300,7 @@ class IRC(threading.Thread):
                     self.send('PRIVMSG', '{user}: Sorry, No results returned for {jobid}'.format(user=user,jobid=jobid),channel)
                 else:
                     uploadedurl = uploadedurl.replace('%40','@')
-                    self.send('PRIVMSG', '!ao < {uploadedurl} --useragent firefox --explain "For {user} - socialscrape job {jobid}" ' \
+                    self.send('PRIVMSG', '!ao < {uploadedurl} --useragent firefox --igset badvideos --explain "For {user} - socialscrape job {jobid}" ' \
                           .format(user=user, uploadedurl=uploadedurl, jobid=jobid), channel)
                     self.send('PRIVMSG', 'chromebot: a https://www.facebook.com/{target}/'.format(target=newtarget), channel)
 
@@ -380,7 +380,7 @@ class IRC(threading.Thread):
                 elif uploadedurl.startswith("Could not upload empty file"):
                     self.send('PRIVMSG', '{user}: Sorry, No results returned for {jobid}'.format(user=user,jobid=jobid),channel)
                 else:
-                    self.send('PRIVMSG', '!ao < {uploadedurl} --explain "For {user} - socialscrape job {jobid}" ' \
+                    self.send('PRIVMSG', '!ao < {uploadedurl} --igset badvideos --explain "For {user} - socialscrape job {jobid}" ' \
                           .format(user=user, uploadedurl=uploadedurl, jobid=jobid), channel)
                     self.send('PRIVMSG', 'chromebot: a https://vk.com/{target}'.format(target=newtarget), channel)
 
